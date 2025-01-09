@@ -416,26 +416,45 @@ void GcodeSuite::G28() {
     TERN_(IMPROVE_HOMING_RELIABILITY, end_slow_homing(saved_motion_state));
 
     // Home Z last if homing towards the bed
-    #if HAS_Z_AXIS && DISABLED(HOME_Z_FIRST)
-      if (doZ) {
-        #if EITHER(Z_MULTI_ENDSTOPS, Z_STEPPER_AUTO_ALIGN)
-          stepper.set_all_z_lock(false);
-          stepper.set_separate_multi_axis(false);
-        #endif
+    #if HAS_Z_AXIS
+      #if DISABLED(HOME_Z_FIRST)
+        if (doZ) {
+          #if EITHER(Z_MULTI_ENDSTOPS, Z_STEPPER_AUTO_ALIGN)
+            stepper.set_all_z_lock(false);
+            stepper.set_separate_multi_axis(false);
+          #endif
 
-        TERN(Z_SAFE_HOMING, home_z_safely(), homeaxis(Z_AXIS));
-        probe.move_z_after_homing();
-      }
+          TERN(Z_SAFE_HOMING, home_z_safely(), homeaxis(Z_AXIS));
+          probe.move_z_after_homing();
+        }
+      #elif defined(Z_AFTER_HOMING)
+        do_z_clearance(Z_AFTER_HOMING);
+      #endif
     #endif
 
     #if LINEAR_AXES >= 4
-      if (doI) homeaxis(I_AXIS);
+      if (doI) {
+        homeaxis(I_AXIS);
+        #if I_HOME_DIR == 0
+          set_axis_is_at_home(I_AXIS);
+        #endif
+      }
     #endif
     #if LINEAR_AXES >= 5
-      if (doJ) homeaxis(J_AXIS);
+      if (doJ) {
+        homeaxis(J_AXIS);
+        #if J_HOME_DIR == 0
+          set_axis_is_at_home(J_AXIS);
+        #endif
+      }
     #endif
     #if LINEAR_AXES >= 6
-      if (doK) homeaxis(K_AXIS);
+      if (doK) {
+        homeaxis(K_AXIS);
+        #if K_HOME_DIR == 0
+          set_axis_is_at_home(K_AXIS);
+        #endif
+      }
     #endif
 
     sync_plan_position();
